@@ -1,2 +1,3 @@
 # Tiny-OS
-Tiny operating system for my Caml-OS project 
+
+Tiny OS is a operating system written from scratch in C that runs on RISC-V.
