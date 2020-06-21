@@ -10,7 +10,10 @@
 #include <lib/stdint.h>
 #include <lib/stdbool.h>
 
+#include <lib/stdio.h>
+
 #include <riscv.h>
+#include <uart.h>
 #include <main.h>
 
 /*
@@ -68,6 +71,13 @@ void init() {
  */
 void main() {
 
+    // For testing, this always holds true :)
+    if (r_hartid() == 0) {
+        // UART Initialization
+        uart_init();
+    }
+
+    printf("Hello World :)\n", 10);
 
     while (true);
 }
