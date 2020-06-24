@@ -9,6 +9,7 @@
 #ifndef TINY_OS_STDBOOL_H
 #define TINY_OS_STDBOOL_H
 
+// _Bool is a builtin-type of the compiler and is at-least 1 bit wide. 
 #define bool    _Bool
 #define true    1
 #define false   0
