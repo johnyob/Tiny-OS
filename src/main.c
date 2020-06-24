@@ -13,7 +13,11 @@
 #include <lib/stdio.h>
 
 #include <riscv.h>
+#include <debug.h>
+
 #include <uart.h>
+#include <pmm.h>
+
 #include <main.h>
 
 /*
@@ -69,15 +73,21 @@ void init() {
  * -----------------
  *
  */
+
 void main() {
 
-    // For testing, this always holds true :)
+    // For testing, this always holds true
     if (r_hartid() == 0) {
         // UART Initialization
         uart_init();
-    }
+        printf("Hello World :)\n");
 
-    printf("Hello World :)\n", 10);
+        info("UART initialized.\n");
+
+        info("PMM initializing...\n");
+        init_pmm();
+        info("PMM initialized.\n");
+    }
 
     while (true);
 }
