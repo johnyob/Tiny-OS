@@ -42,6 +42,24 @@ typedef uint64_t    uintptr_t;
     _a < _b ? _a : _b;              \
 })
 
-#define ABS(x)
+#define FLOOR(a, b)                  \
+({                                  \
+    __typeof__ (a) _a = (a);        \
+    __typeof__ (b) _b = (b);        \
+    (_a / _b);                      \
+})
+
+
+#define CEIL(a, b)                  \
+({                                  \
+    __typeof__ (a) _a = (a);        \
+    __typeof__ (b) _b = (b);        \
+    (_a / _b) + (_a % _b > 0);      \
+})
+
+
+#define ROUND_DOWN(x, n)    ((x) & ~((n) - 1))
+#define ROUND_UP(x, n)      (((x) + n - 1) & ~((n) - 1))
+
 
 #endif //TINY_OS_STDINT_H
