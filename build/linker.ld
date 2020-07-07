@@ -8,32 +8,37 @@ MEMORY
 
 SECTIONS
 {
-    .text : ALIGN(4096) /* align to page size */
+
+    .text :
     {
         PROVIDE(__TEXT_START = .);
         *(.text)
-	    PROVIDE(__TEXT_END = .);
+        . =  ALIGN(0x1000);
+        PROVIDE(__TEXT_END = .);
     } >ram
 
-    .rodata : ALIGN(4096)
+	.rodata :
     {
-	    PROVIDE(__RODATA_START = .);
+        PROVIDE(__RODATA_START = .);
         *(.rodata)
-	    PROVIDE(__RODATA_END = .);
+        . =  ALIGN(0x1000);
+        PROVIDE(__RODATA_END = .);
     } >ram
 
-    .data : ALIGN(4096)
+    .data :
     {
 	    PROVIDE(__DATA_START = .);
-        *(.data)
+	    *(.data)
+	    . =  ALIGN(0x1000);
 	    PROVIDE(__DATA_END = .);
-    } >ram 
+    } >ram
 
-    .bss : ALIGN(4096)
+    .bss :
     {
-	    PROVIDE(__BSS_START = .);
+        PROVIDE(__BSS_START = .);
         *(.bss)
-	    PROVIDE(__BSS_END = .);
+        . =  ALIGN(0x1000);
+        PROVIDE(__BSS_END = .);
     } >ram
 
     PROVIDE(__MEMORY_START = ORIGIN(ram));
