@@ -15,10 +15,14 @@
 #include <riscv.h>
 #include <debug.h>
 
+#include <symbols.h>
+
 #include <uart.h>
 #include <pmm.h>
+#include <vmm.h>
 
 #include <main.h>
+
 
 /*
  * Procedure:   init
@@ -85,8 +89,13 @@ void main() {
         info("UART initialized.\n");
 
         info("PMM initializing...\n");
-        init_pmm();
+        pmm_init();
         info("PMM initialized.\n");
+
+
+        info("VMM initializing...\n");
+        vmm_init();
+        info("VMM initialized.\n");
     }
 
     while (true);
