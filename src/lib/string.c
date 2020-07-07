@@ -25,11 +25,11 @@
  *
  */
 void* memcpy(void* dst, const void *src, size_t n) {
+    assert(dst != null);
+    assert(src != null);
+
     uint8_t* d = dst;
     const uint8_t* s = src;
-
-    assert(d != null || n == 0);
-    assert(s != null || n == 0);
 
     while (n-- > 0) *d++ = *s++;
 
@@ -53,7 +53,7 @@ void* memcpy(void* dst, const void *src, size_t n) {
 void* memset(void* dst, int value, size_t n) {
     uint8_t* d = dst;
 
-    assert(d != null || n == 0);
+    assert(dst != null);
 
     while (n-- > 0) *d++ = value;
 
@@ -80,11 +80,11 @@ void* memset(void* dst, int value, size_t n) {
  *
  */
 int memcmp(const void* ptr1, const void* ptr2, size_t n) {
+    assert(ptr1 != null);
+    assert(ptr2 != null);
+
     const uint8_t* p1 = ptr1;
     const uint8_t* p2 = ptr2;
-
-    assert(p1 != null || n == 0);
-    assert(p2 != null || n == 0);
 
     for (; n-- > 0; p1++, p2++) {
         if (*p1 != *p2) return *p1 > *p2 ? 1 : -1;
