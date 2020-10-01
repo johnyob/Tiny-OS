@@ -64,7 +64,6 @@ typedef uint64_t    vaddr_t;
 
 // 512 entries (essentially pte_t[512])
 typedef pte_t* pagetable_t;
-static pagetable_t pagetable;
 
 void vmm_init();
 void vmm_hart_init();

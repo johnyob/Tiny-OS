@@ -3,9 +3,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //      File:        vmm.c
 //      Environment: Tiny OS
-//      Description: Contains the map, unmap methods used to map (and unmap) virtual addresses to physical addresses
-//                   in our page table. Our tiny operating system will only have a single page table
-//                   used so we can get virtual contiguous memory :). Also adds some protection to other sections.
+//      Description: The virtual memory manager (vmm) contains the methods for mapping virtual addresses to physical
+//                   address. The vmm also initializes the kernel page table using an identity map.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <lib/stdint.h>
@@ -18,7 +17,15 @@
 #include <debug.h>
 #include <pmm.h>
 #include <vmm.h>
+#include <interrupt.h>
 
+static pagetable_t pagetable;
+
+/*
+ * Procedure:   vmm_init
+ * ---------------------
+ *
+ */
 void vmm_init() {
     pagetable = (pagetable_t)alloc_page();
 
@@ -47,11 +54,21 @@ void vmm_init() {
     info("stack: \t%#p -> %#p\n", KERNEL_STACK_START, KERNEL_STACK_END);
 
     // Heap
-    map(pagetable, HEAP_START, HEAP_START, MEMORY_END - HEAP_START, PTE_R | PTE_W);
+    map(pagetable, HEAP_START, HEAP_START, HEAP_SIZE, PTE_R | PTE_W);
     info("heap: \t%#p -> %#p\n", HEAP_START, MEMORY_END);
 
+    // PLIC
+    map(pagetable, PLIC_START, PLIC_START, PLIC_SIZE, PTE_R | PTE_W);
+    info("plic: \t%#p -> %#p\n", PLIC_START, PLIC_START + PLIC_SIZE);
+
+    map(pagetable, CLINT_START, CLINT_START, CLINT_SIZE, PTE_R | PTE_W);
+    info("clint: \t%#p -> %#p\n", CLINT_START, CLINT_START + CLINT_SIZE);
 }
 
+/*
+ * Procedure:   vmm_hart_init
+ * --------------------------
+ */
 void vmm_hart_init() {
     w_satp(SATP(pagetable));
 }
@@ -61,6 +78,11 @@ void vmm_hart_init() {
 // INTERNAL METHODS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
+ * Procedure:   __walk
+ * -------------------
+ * The internal walk procedure traverses the 3-level page table structure.
+ */
 pte_t* __walk(pagetable_t table, vaddr_t vaddr, bool can_alloc) {
     assert(vaddr < MAX_VADDR);
 
