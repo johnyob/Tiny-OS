@@ -132,10 +132,10 @@ static inline void w_mstatus(uint64_t x) {
 #define MTVEC_MODE_DIRECT   0
 #define MTVEC_MODE_VECTORED 1
 
-#define MTVEC_BASE(mtvec)   ((mtvec & MTVEC_BASE_MASK) >> 2)
+#define MTVEC_BASE(mtvec)   (mtvec & MTVEC_BASE_MASK)
 #define MTVEC_MODE(mtvec)   (mtvec & MTVEC_MODE_MASK)
 
-#define MTVEC(base, mode)   ((base << 2) | (mode & MTVEC_MODE_MASK))
+#define MTVEC(base, mode)   (base | (mode & MTVEC_MODE_MASK))
 
 static inline uint64_t r_mtvec() {
     uint64_t x;
@@ -380,25 +380,26 @@ static inline void w_mepc(uint64_t x) {
 #define CAUSE_MEI  11
 
 // Exceptions
-#define CAUSE_INSTRUCTION_ADDR_MISALIGNED  0
-#define CAUSE_INSTRUCTION_ACCESS_FAULT     1
-#define CAUSE_ILLEGAL_INSTRUCTION          2
+#define CAUSE_INST_ADDR_MISALIGNED          0
+#define CAUSE_INST_ACCESS_FAULT             1
 
-#define CAUSE_BREAKPOINT                   3
+#define CAUSE_ILLEGAL_INST                  2
 
-#define CAUSE_LOAD_ADDR_MISALIGNED         4
-#define CAUSE_LOAD_ACCESS_FAULT            5
+#define CAUSE_BREAKPOINT                    3
 
-#define CAUSE_STORE_ADDR_MISALIGNED        6
-#define CAUSE_STORE_ACCESS_FAULT           7
+#define CAUSE_LOAD_ADDR_MISALIGNED          4
+#define CAUSE_LOAD_ACCESS_FAULT             5
 
-#define CAUSE_UECALL                       8
-#define CAUSE_SECALL                       9
-#define CAUSE_MECALL                       10
+#define CAUSE_STORE_ADDR_MISALIGNED         6
+#define CAUSE_STORE_ACCESS_FAULT            7
 
-#define CAUSE_INSTRUCTION_PAGE_FAULT       11
-#define CAUSE_LOAD_PAGE_FAULT              12
-#define CAUSE_STORE_PAGE_FAULT             13
+#define CAUSE_UECALL                        8
+#define CAUSE_SECALL                        9
+#define CAUSE_MECALL                        11
+
+#define CAUSE_INST_PAGE_FAULT               12
+#define CAUSE_LOAD_PAGE_FAULT               13
+#define CAUSE_STORE_PAGE_FAULT              15
 
 static inline uint64_t r_mcause() {
     uint64_t x;
@@ -515,10 +516,10 @@ static inline void w_sepc(uint64_t x) {
 #define STVEC_MODE_DIRECT   0
 #define STVEC_MODE_VECTORED 1
 
-#define STVEC_BASE(mtvec)   ((stvec & STVEC_BASE_MASK) >> 2)
+#define STVEC_BASE(mtvec)   (stvec & STVEC_BASE_MASK)
 #define STVEC_MODE(mtvec)   (stvec & STVEC_MODE_MASK)
 
-#define STVEC(base, mode)   ((base << 2) | (mode & STVEC_MODE_MASK))
+#define STVEC(base, mode)   ((base) | (mode & STVEC_MODE_MASK))
 
 static inline uint64_t r_stvec() {
     uint64_t x;
