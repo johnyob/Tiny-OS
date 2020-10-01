@@ -9,17 +9,16 @@
 
 #include <lib/stdint.h>
 #include <lib/stdbool.h>
-
 #include <lib/stdio.h>
 
 #include <riscv.h>
 #include <debug.h>
 
-#include <symbols.h>
-
 #include <uart.h>
 #include <pmm.h>
 #include <vmm.h>
+#include <trap.h>
+#include <interrupt.h>
 
 #include <main.h>
 
@@ -56,10 +55,7 @@ void init() {
     w_mideleg(0xffff);
 
     // We set the mepc to main, so when we call mret we begin the execution of main
-    w_mepc((uint64_t)main);
-
-    // Enable previous interrupts (in supervisor mode)
-    w_mstatus(r_mstatus() | MSTATUS_MPIE);
+    w_mepc((uintptr_t)main);
 
     // We want to clear all interrupt options (only allowing exceptions)
     uint64_t mie = r_mie();
@@ -69,6 +65,9 @@ void init() {
     // To access the hartid from supervisor mode, we store it in the tp register
     w_hartid(r_mhartid());
 
+    // Initialize the CLINT
+    clint_hart_init();
+
     asm("mret");
 }
 
@@ -77,7 +76,6 @@ void init() {
  * -----------------
  *
  */
-
 void main() {
 
     // For testing, this always holds true
@@ -95,7 +93,19 @@ void main() {
 
         info("VMM initializing...\n");
         vmm_init();
+        vmm_hart_init();
         info("VMM initialized.\n");
+
+        info("Traps initializing...\n");
+        trap_init();
+        trap_hart_init();
+        info("Traps initialized.\n");
+
+        info("PLIC initializing...\n");
+        plic_init();
+        plic_hart_init();
+        info("PLIC initialized.\n");
+
     }
 
     while (true);
