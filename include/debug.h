@@ -23,6 +23,7 @@ void kernel_panic(const char* file, int line, const char* function, const char* 
 #define info(format, ...) printf("\x1b[0;36m[INFO]\x1b[0m " format, ##__VA_ARGS__)
 #define warn(format, ...) printf("\x1b[0;33m[WARN]\x1b[0m " format, ##__VA_ARGS__)
 
-#define NOT_REACHABLE panic("executed an unreachable statement")
+#define NOT_REACHABLE   panic("executed an unreachable statement")
+#define UNUSED          __attribute__((unused))
 
 #endif //TINY_OS_DEBUG_H
