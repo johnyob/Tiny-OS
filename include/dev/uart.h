@@ -11,6 +11,9 @@
 
 #include <lib/ctype.h>
 
+#include <debug.h>
+#include <trap.h>
+
 // QEMU location for UART MMIO address space
 #define UART0 (0x10000000)
 
@@ -45,5 +48,7 @@
 void    uart_init();
 uchar_t uart_getc();
 void    uart_putc(uchar_t c);
+
+void uart_handle_interrupt(UNUSED trap_frame_t* tf);
 
 #endif //TINY_OS_UART_H

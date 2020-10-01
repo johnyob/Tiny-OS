@@ -11,8 +11,9 @@
 #include <lib/ctype.h>
 #include <lib/stdint.h>
 #include <lib/stdarg.h>
-
 #include <lib/stdio.h>
+
+#include <debug.h>
 
 #include <uart.h>
 
@@ -138,4 +139,9 @@ int vprintf(const char* format, va_list va) {
     int n = 0;
     __vprintf(format, va, buf_putc, &n);
     return n;
+}
+
+void uart_handle_interrupt(UNUSED trap_frame_t* tf) {
+    uchar_t c = mmio_read(RBR);
+    uart_putc(c);
 }
