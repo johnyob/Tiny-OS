@@ -6,7 +6,20 @@
 //      Description:
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <lib/stdint.h>
 
+#include <param.h>
+#include <riscv.h>
+#include <debug.h>
+
+#include <mm/pmm.h>
+#include <mm/vmm.h>
+
+#include <trap/interrupt.h>
+
+#include <threads/thread.h>
+
+#include <dev/timer.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // CLINT (Core Local Interruptor)                                                                                     //
@@ -26,9 +39,8 @@
 // machine mode.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-extern void m_trap_vec();
-
-#define CLINT_START         (0x2000000L)
+#define CLINT_START             (0x2000000L)
+#define CLINT_SIZE              (0x10000L)
 
 /*
  * The CLINT controls the timer using a series of mtimecmp registers, timer compare registers.
@@ -51,10 +63,10 @@ extern void m_trap_vec();
  * temporary registers that we use during the timer interrupt vector. Our assembly code
  * only uses the registers t1, t2 and t3. Hence our mscratch area requires 5 8 byte entries.
  */
-static uint64_t mscratch[NCPU][5];
+static uint64_t mscratch[NUM_HART][5];
 
 // The number of timer ticks since the OS booted.
-static uint64_t ticks;
+static volatile uint64_t ticks;
 
 void timer_init() {
     uint64_t hartid = r_hartid();
@@ -74,6 +86,17 @@ void timer_init() {
 
 }
 
+/*
+ * Procedure:   timer_vm_init
+ * --------------------------
+ * This procedure performs the kernel virtual memory mapping required during initialization.
+ *
+ */
+void timer_vm_init() {
+    kmap(CLINT_START, CLINT_START, CLINT_SIZE, PTE_R | PTE_W);
+    info("clint: \t%#p -> %#p\n", CLINT_START, CLINT_START + CLINT_SIZE);
+}
+
 uint64_t timer_ticks() {
     // Disable all interrupts
     intr_state_t state = intr_disable();
@@ -81,10 +104,32 @@ uint64_t timer_ticks() {
     uint64_t t = ticks;
 
     // Return the interruptor to it's previous setting
-    intr_state(state);
+    intr_set_state(state);
     return t;
+}
+
+uint64_t timer_elapsed(uint64_t then) {
+    uint64_t t = timer_ticks();
+
+    assert(t >= then);
+    return t - then;
+}
+
+void timer_sleep(uint64_t t) {
+    uint64_t ticks0 = timer_ticks();
+
+    assert(intr_get_state() == INTR_ON);
+
+    info("%d thread\n", thread_current()->tid);
+    info("%d ticks0\n", ticks0);
+
+    while (timer_elapsed(ticks0) < t) {
+        thread_yield();
+        if (timer_elapsed(ticks0) > 0) info("Yay!\n");
+    }
 }
 
 void timer_handle_interrupt(UNUSED trap_frame_t* tf) {
     ticks++;
+    scheduler_tick();
 }

@@ -11,13 +11,13 @@
 #include <lib/stddef.h>
 #include <lib/stdbool.h>
 
-#include <uart.h>
 #include <riscv.h>
-#include <symbols.h>
 #include <debug.h>
-#include <pmm.h>
-#include <vmm.h>
-#include <interrupt.h>
+
+#include <mm/symbols.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
+
 
 static pagetable_t pagetable;
 
@@ -28,10 +28,6 @@ static pagetable_t pagetable;
  */
 void vmm_init() {
     pagetable = (pagetable_t)alloc_page();
-
-    // UART
-    map(pagetable, UART0, UART0, PAGE_SIZE, PTE_R | PTE_W);
-    info("uart: \t%#p -> %#p\n", UART0, UART0 + PAGE_SIZE);
 
     // TEXT
     map(pagetable, TEXT_START, TEXT_START, TEXT_END - TEXT_START, PTE_R | PTE_X);
@@ -50,19 +46,13 @@ void vmm_init() {
     info("bss: \t%#p -> %#p\n", BSS_START, BSS_END);
 
     // Kernel Stack
-    map(pagetable, KERNEL_STACK_START, KERNEL_STACK_START, KERNEL_STACK_END - KERNEL_STACK_START, PTE_R | PTE_W);
-    info("stack: \t%#p -> %#p\n", KERNEL_STACK_START, KERNEL_STACK_END);
+    map(pagetable, STACK_START, STACK_START, STACK_END - STACK_START, PTE_R | PTE_W);
+    info("stack: \t%#p -> %#p\n", STACK_START, STACK_END);
 
     // Heap
     map(pagetable, HEAP_START, HEAP_START, HEAP_SIZE, PTE_R | PTE_W);
     info("heap: \t%#p -> %#p\n", HEAP_START, MEMORY_END);
 
-    // PLIC
-    map(pagetable, PLIC_START, PLIC_START, PLIC_SIZE, PTE_R | PTE_W);
-    info("plic: \t%#p -> %#p\n", PLIC_START, PLIC_START + PLIC_SIZE);
-
-    map(pagetable, CLINT_START, CLINT_START, CLINT_SIZE, PTE_R | PTE_W);
-    info("clint: \t%#p -> %#p\n", CLINT_START, CLINT_START + CLINT_SIZE);
 }
 
 /*
@@ -161,3 +151,22 @@ void unmap(pagetable_t table, vaddr_t vaddr, size_t n) {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// PUBLIC KERNEL METHODS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+inline pagetable_t kpagetable(void) {
+    return pagetable;
+}
+
+paddr_t kwalk(vaddr_t vaddr) {
+    walk(pagetable, vaddr);
+}
+
+void kmap(vaddr_t vaddr, paddr_t paddr, size_t n, uint32_t perm) {
+    map(pagetable, vaddr, paddr, n, perm);
+}
+
+void kunmap(vaddr_t vaddr, size_t n) {
+    unmap(pagetable, vaddr, n);
+}

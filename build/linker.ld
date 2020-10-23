@@ -41,12 +41,18 @@ SECTIONS
         PROVIDE(__BSS_END = .);
     } >ram
 
+    .stack :
+    {
+        PROVIDE(__STACK_START = .);
+        *(.stack)
+        . =  ALIGN(0x1000);
+        PROVIDE(__STACK_END = .);
+    } >ram
+
+
     PROVIDE(__MEMORY_START = ORIGIN(ram));
     PROVIDE(__MEMORY_END = ORIGIN(ram) + LENGTH(ram));
 
-    PROVIDE(__KERNEL_STACK_START = __BSS_END);
-    PROVIDE(__KERNEL_STACK_END = __BSS_END + 0x8000);
-    
-    PROVIDE(__HEAP_START = __KERNEL_STACK_END);
+    PROVIDE(__HEAP_START = __STACK_END);
     PROVIDE(__HEAP_SIZE = __MEMORY_END - __HEAP_START);
 }

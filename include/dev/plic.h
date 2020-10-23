@@ -1,17 +1,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// - Alistair O'Brien - 6/18/2020 - University of Cambridge
+// - Alistair O'Brien - 6/20/2020 - University of Cambridge
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//      File:        stdlib.h
-//      Environment: Tiny OS
-//      Description: Contains some of the standard lib methods. Currently only contains abs (TODO: add more)
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TINY_OS_STDLIB_H
-#define TINY_OS_STDLIB_H
+#ifndef TINY_OS_PLIC_H
+#define TINY_OS_PLIC_H
 
-static inline int abs(int n) {
-    return n < 0 ? -(n) : n;
-}
+#include <trap/trap.h>
 
+void plic_init();
+void plic_vm_init();
+void plic_hart_init();
 
-#endif //TINY_OS_STDLIB_H
+void plic_handle_interrupt(trap_frame_t* tf);
+
+#endif //TINY_OS_PLIC_H

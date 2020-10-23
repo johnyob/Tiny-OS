@@ -14,14 +14,14 @@ int	  memcmp(const void* ptr1, const void* ptr2, size_t n);
 
 #define bzero(ptr, n) (memset(ptr, '\0', n), (void) 0)
 
-//char* strcat(char* dst, const char* src);
+char* strcat(char* dst, const char* src);
 //char* strncat(char* dst, const char* src, size_t n);
 //
 //int strcmp(const char* str1, const char* str2);
 //int strncmp(const char* str1, const char* str2, size_t n);
 //
-//char* strcpy(char* dst, const char* src);
-//char* strncpy(char* dst, const char* src, size_t n);
+char* strcpy(char* dst, const char* src);
+char* strncpy(char* dst, const char* src, size_t n);
 //
 //char* strstr(const char* str1, const char* str2);
 //

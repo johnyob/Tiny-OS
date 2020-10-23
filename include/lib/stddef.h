@@ -11,9 +11,12 @@
 
 #include <lib/stdint.h>
 
-#define null ((void*)0)
 
 typedef uint64_t ptrdiff_t;
 typedef uint64_t size_t;
+
+
+#define null ((void*)0)
+#define offsetof(type, member) ((size_t) &((type *)null)->member)
 
 #endif //TINY_OS_STDDEF_H

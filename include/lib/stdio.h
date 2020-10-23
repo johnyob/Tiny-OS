@@ -5,7 +5,7 @@
 //      Environment: Tiny OS
 //      Description: C99 standard definition of printf methods, including printf, sprintf, snprintf,
 //                   vprintf and vsnprintf. The header also contains the prototypes for the
-//                   internal __printf and __vprintf methods. These are implemented by the console driver.
+//                   internal __printf and __vprintf methods. These are implemented by the console dev.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -24,7 +24,7 @@
 int printf(const char* format, ...);
 int snprintf(char* buffer, size_t n, const char* format, ...);
 
-// The implementation of vprintf is provided in the console driver :)
+// The implementation of vprintf is provided in the console dev :)
 int vprintf(const char* format, va_list va);
 int vsnprintf(char* buffer, size_t n, const char* format, va_list va);
 

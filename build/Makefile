@@ -37,7 +37,7 @@ build: $(OBJECTS) $(HEADERS)
 
 $(OBJECT_DIR)/%.o: $(SRC)/%.S
 				mkdir -p $(@D)
-				$(CC) $(C_FLAGS) -c $< -o $@
+				$(CC) $(C_FLAGS) -I$(HEAD) -c $< -o $@
 
 $(OBJECT_DIR)/%.o: $(SRC)/%.c
 				mkdir -p $(@D)

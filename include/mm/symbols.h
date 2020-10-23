@@ -24,8 +24,8 @@ extern uint8_t __DATA_START;
 extern uint8_t __DATA_END;
 extern uint8_t __BSS_START;
 extern uint8_t __BSS_END;
-extern uint8_t __KERNEL_STACK_START;
-extern uint8_t __KERNEL_STACK_END;
+extern uint8_t __STACK_START;
+extern uint8_t __STACK_END;
 extern uint8_t __HEAP_START;
 extern uint8_t __MEMORY_END;
 extern uint8_t __HEAP_SIZE;
@@ -38,11 +38,9 @@ extern uint8_t __HEAP_SIZE;
 #define DATA_END            (uintptr_t)(&__DATA_END)
 #define BSS_START           (uintptr_t)(&__BSS_START)
 #define BSS_END             (uintptr_t)(&__BSS_END)
-#define KERNEL_STACK_START  (uintptr_t)(&__KERNEL_STACK_START)
-#define KERNEL_STACK_END    (uintptr_t)(&__KERNEL_STACK_END)
+#define STACK_START         (uintptr_t)(&__STACK_START)
+#define STACK_END           (uintptr_t)(&__STACK_END)
 #define HEAP_START          (uintptr_t)(&__HEAP_START)
-#define KERNEL_STACK_START  (uintptr_t)(&__KERNEL_STACK_START)
-#define KERNEL_STACK_END    (uintptr_t)(&__KERNEL_STACK_END)
 #define MEMORY_END          (uintptr_t)(&__MEMORY_END)
 #define HEAP_SIZE           (uint64_t)(&__HEAP_SIZE)
 

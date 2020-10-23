@@ -13,8 +13,9 @@
 #include <lib/list.h>
 
 #include <debug.h>
-#include <symbols.h>
-#include <pmm.h>
+
+#include <mm/symbols.h>
+#include <mm/pmm.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PAGE ALLOCATOR (PHYSICAL MEMORY MANAGER)                                                                           //
@@ -186,13 +187,9 @@ void bitmap_free(uint64_t p, size_t size) {
 
 typedef struct block {
     size_t order;
-    DEFINE_LINK(block);
+    list_node_t list_node;
 } block_t;
 
-// Some useful macros from <lib/list.h> to implement the required linked list methods and list struct for a
-// block struct.
-DEFINE_LIST(block)
-IMPLEMENT_LIST(block)
 
 /*
  * We define a bucket of order n as a collection of blocks (that need not be contiguous) that are of the same order,
@@ -202,7 +199,7 @@ IMPLEMENT_LIST(block)
 #define BUCKET_COUNT 9
 
 // The bucket of order i is stored in the buckets list at index i, that is buckets[i].
-static block_list_t buckets[BUCKET_COUNT];
+static list_t buckets[BUCKET_COUNT];
 
 // Our memory manager needs to keep track of the minimum (base) pointer of the heap
 // and the maximum pointer.
@@ -248,7 +245,7 @@ void* alloc_pages(size_t order) {
     // Increment the order [i] until we either reach the end of the bucket array,
     // or we find a bucket that isn't empty.
     size_t i;
-    for (i = order; i < BUCKET_COUNT && size_block_list(&buckets[i]) == 0; i++);
+    for (i = order; i < BUCKET_COUNT && list_size(&buckets[i]) == 0; i++);
 
     // If [i == BUCKET_COUNT], then it follows that we didn't find a non-empty bucket.
     // Hence we have no available contiguous blocks for the request, so return null.
@@ -256,7 +253,7 @@ void* alloc_pages(size_t order) {
 
     // Since [i != BUCKET_COUNT], then it follows that we found a non-emtpy bucket :)
     // So remove a block from the bucket of order [i].
-    block_t* free_block = pop_block_list(&buckets[i]);
+    block_t* free_block = LIST_VALUE(block_t, list_node, list_pop_head(&buckets[i]));
 
     // We break the block into smaller blocks until we have a block of order [order].
     block_t* buddy_block;
@@ -269,7 +266,7 @@ void* alloc_pages(size_t order) {
         buddy_block = (block_t*)((uintptr_t)free_block + (1 << (i + PAGE_SHIFT)));
 
         // Insert the free buddy block into the bucket of order [i - 1].
-        insert_block_list(&buckets[i], buddy_block);
+        list_push_head(&buckets[i], &buddy_block->list_node);
     }
 
     // Allocate the pages within the free_block of order [i = order].
@@ -323,7 +320,7 @@ void free_pages(void* ptr, size_t order) {
         if (ALLOCATED(ADDR_TO_PAGE_NUM((uintptr_t)buddy_block)) || buddy_block->order != order) break;
 
         // If the buddy is free, then remove it from the bucket of order [order].
-        delete_block_list(&buckets[order], buddy_block);
+        list_delete(&buckets[order], &buddy_block->list_node);
 
         // If freed_block is a right child, then freed_block pointer needs to be updated to the start of the new block
         // which is the pointer to the buddy_block. We also need to update the page number of the freed_block.
@@ -340,7 +337,7 @@ void free_pages(void* ptr, size_t order) {
     freed_block->order = order;
 
     // Insert the free block into the bucket of order [order].
-    insert_block_list(&buckets[order], freed_block);
+    list_push_head(&buckets[order], &freed_block->list_node);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -388,7 +385,7 @@ void pmm_init() {
     bitmap_free(ADDR_TO_PAGE_NUM(base_ptr), range);
 
     // Initialize the buckets
-    for (int i = 0; i < BUCKET_COUNT; i++) INIT_LIST(buckets[i]);
+    for (int i = 0; i < BUCKET_COUNT; i++) list_init(&buckets[i]);
 
     block_t* block;
     uintptr_t min = base_ptr;
@@ -404,7 +401,7 @@ void pmm_init() {
         // Create block and insert it into the correct bucket.
         block = (block_t*)min;
         block->order = i;
-        insert_block_list(&buckets[i], block);
+        list_push_head(&buckets[i], &block->list_node);
 
         // Modify min and range accordingly with the allocated block.
         min += 1 << (i + PAGE_SHIFT);

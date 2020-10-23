@@ -9,12 +9,14 @@
 
 #include <lib/stdint.h>
 
-#include <riscv.h>
 #include <debug.h>
-#include <param.h>
-#include <uart.h>
+#include <riscv.h>
 
-#include <interrupt.h>
+#include <mm/pmm.h>
+#include <mm/vmm.h>
+
+#include <dev/uart.h>
+#include <dev/plic.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // PLIC (Platform Local Interrupt Controller)                                                                         //
@@ -35,6 +37,9 @@
 // The PLIC used by QEMU's virt riscv64 architecture is identical to the SiFive PLIC.
 // See chapter 10 of https://sifive.cdn.prismic.io/sifive%2F834354f0-08e6-423c-bf1f-0cb58ef14061_fu540-c000-v1.0.pdf.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define PLIC_START          (0xc000000L)
+#define PLIC_SIZE           (0x4000000L)
 
 /*
  * The source priority registers have the address space [0x0c000004, 0x0c0000D8].
@@ -212,6 +217,11 @@ void plic_init() {
     plic_irq_priority(PLIC_UART0_IRQ, 1);
 }
 
+void plic_vm_init() {
+    kmap(PLIC_START, PLIC_START, PLIC_SIZE, PTE_R | PTE_W);
+    info("plic: \t%#p -> %#p\n", PLIC_START, PLIC_START + PLIC_SIZE);
+}
+
 /*
  * Procedure:   plic_hart_init
  * ---------------------------
@@ -225,9 +235,4 @@ void plic_hart_init() {
     plic_irq_threshold(0);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// INTERRUPTS                                                                                                         //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Tiny OS splits traps into two categories.
-//
-//
+

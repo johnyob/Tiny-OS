@@ -72,4 +72,9 @@ paddr_t walk(pagetable_t table, vaddr_t vaddr);
 void map(pagetable_t table, vaddr_t vaddr, paddr_t paddr, size_t length, uint32_t perm);
 void unmap(pagetable_t table, vaddr_t vaddr, size_t length);
 
+pagetable_t kpagetable(void);
+void kmap(vaddr_t vaddr, paddr_t paddr, size_t length, uint32_t perm);
+void kunmap(vaddr_t vaddr, size_t length);
+
+
 #endif //TINY_OS_VMM_H

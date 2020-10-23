@@ -39,7 +39,28 @@ _start:
 
     # We now initialize the stack. The stack grows down from the end of the stack,
     # so we must initialize the stack pointer to the end of kernel stack.
-    la sp, __KERNEL_STACK_END
+
+    # Note that in main.c, we use the kernel_stack array (preallocated space in the BSS section :) ).
+    # First set sp to equal kernel_stack (the beginning of the allocated space).
+    la sp, kernel_stack
+
+    # Note that the beginning of the kernel stack for the hart with hartid is given by
+    # kernel_stack + (hartid * 4096). Since the sp must be initialized at the end of the kernel
+    # stack it follows that we have sp = kernel_stack + (hartid * 4096) + 4096 = kernel_stack + ((hartid + 1) * 4096)
+
+    # Read the hartid from the mhartid csr and increment it, hence t1 now stores hartid + 1.
+    csrr t0, mhartid
+    addi t0, t0, 1
+
+    # Compute ((hartid + 1) * 4096). Unfortunately riscv doesn't have a muli instruction, so we load
+    # 4096 immediately via the li instruction into register t1.
+    li t1, 4096
+    mul t0, t0, t1
+
+    # Now calculate kernel_stack + ((hartid + 1) * 4096) and set sp = kernel_stack + ((hartid + 1) * 4096).
+    add sp, sp, t0
+
+    # The stack is now initialized and we can preceed to calling init.
 
     # Call init. This is our kernel's setup procedure before calling main.
     # It is written in C which makes life easier :)

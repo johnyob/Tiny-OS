@@ -13,70 +13,14 @@
 
 #include <debug.h>
 #include <riscv.h>
-#include <interrupt.h>
 
-#include <trap.h>
+#include <trap/interrupt.h>
 
-extern void s_trap_vec();
+#include <trap/trap.h>
 
-/*
- * Procedure:   trap_init
- * ----------------------
- * To enable trap (exceptions and interrupts) handling, we need to set the SIE (Supervisor Interrupt Enable)
- * bit in the sstatus register and enable the timer, software and external interrupts in the
- * sie register.
- * We note that exceptions are always enabled, hence no modifications to exception registers
- * are required.
- */
-void trap_init() {
-    w_sstatus(r_sstatus() | SSTATUS_SIE);
-    w_sie(r_sie() | SIE_STIE | SIE_SSIE | SIE_SEIE);
-}
+extern void s_trap_vec(void);
+extern void s_ret_trap(void);
 
-/*
- * Procedure:   trap_hart_init
- * ---------------------------
- * To enable trap handling, we first have to store the address of trap handler for the kernel (s_trap)
- * in the stvec (supervisor trap vector) register using the direct trap mode.
- */
-void trap_hart_init() {
-    w_stvec(STVEC((uintptr_t)s_trap_vec, STVEC_MODE_DIRECT));
-}
-
-
-/*
- * Procedure:   s_trap
- * -------------------
- *
- */
-void s_trap(trap_frame_t* tf) {
-
-    // Determine whether the trap is caused by an external interrupt.
-    bool is_interrupt = SCAUSE_INTERRUPT(tf->cause);
-
-    // We must assert that s_trap is only called if the previous privilege is Supervisor.
-    assert((tf->status & SSTATUS_SPP_MASK) != 0);
-
-    if (!is_interrupt) {
-
-    } else {
-        // Interrupts.
-        switch (cause) {
-            case CAUSE_SEI:
-                plic_handle_interrupt(tf);
-                break;
-            case CAUSE_SSI:
-                timer_handle_interrupt(tf);
-                break;
-            default:
-                panic(
-                    "Unhandled interrupt. Hart: %d, status: %#x, epc: %p, cause: %d, tval: %#x.\n",
-                    r_hartid(), tf->status, tf->epc, cause, tf->tval
-                );
-                break;
-        }
-    }
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EXCEPTIONS                                                                                                         //
@@ -130,13 +74,13 @@ void s_exc_handler(trap_frame_t* tf) {
             // of a virtual address.
             panic("Access fault. Hart: %d, epc: %p, tval: %#x.\n", r_hartid(), tf->epc, tf->tval);
             break;
-        case EXC_UECALL:
-        case EXC_SECALL:
-        case EXC_MECALL:
+        case EXC_U_ECALL:
+        case EXC_S_ECALL:
+        case EXC_M_ECALL:
             // Environment calls, this occurs when the RISC-V special ecall instruction is executed.
             panic(
                     "E-call. Hart: %d, privilege: %d, epc: %p, tval: %#x.\n",
-                    r_hartid(), cause - CAUSE_UECALL, tf->epc, tf->tval
+                    r_hartid(), exc - EXC_U_ECALL, tf->epc, tf->tval
             );
             break;
         case EXC_ILLEGAL_INST:
@@ -148,68 +92,72 @@ void s_exc_handler(trap_frame_t* tf) {
             panic("Breakpoint encountered. Hart: %d, epc: %p, tval: %#x.\n", r_hartid(), tf->epc, tf->tval);
             break;
         default:
-            panic(
-                    "Unhandled exception. Hart: %d, status: %#x, epc: %p, cause: %d, tval: %#x.\n",
-                    r_hartid(), tf->status, tf->epc, cause, tf->tval
-            );
+            dump_trap_frame(tf);
             break;
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// INTERRUPT STATE                                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void dump_trap_frame(const trap_frame_t* tf) {
+    bool is_interrupt = SCAUSE_INTERRUPT(tf->cause);
+    uint64_t cause = SCAUSE_EXCEPTION(tf->cause);
+    info(
+        "Trap frame. Hart: %d, status: %#x, epc: %p, interrupt: %d, cause: %d, tval: %#x.\n",
+        r_hartid(), tf->status, tf->epc, is_interrupt, cause, tf->tval
+    );
+;}
 
-intr_state_t intr_get_state() {
-    return r_sstatus() & SSTATUS_SIE_MASK;
-}
 
-intr_state_t intr_set_state(intr_state_t state) {
-    return state == INTR_ON ? intr_enable() : intr_disable();
-}
-
-intr_state_t intr_enable() {
-    intr_state_t prev_state = intr_get_state();
-    w_sstatus(r_sstatus() | SSTATUS_SIE);
-    return prev_state;
-}
-
-intr_state_t intr_disable() {
-    intr_state_t prev_state = intr_get_state();
-    w_sstatus(r_sstatus() & ~SSTATUS_SIE_MASK);
-    return prev_state;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// INTERRUPTS                                                                                                         //
+// EXTERNAL TRAP METHODS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void intr_init() {
+/*
+ * Procedure:   trap_init
+ * ----------------------
+ * To enable trap (exceptions and interrupts) handling, we need to set the SIE (Supervisor Interrupt Enable)
+ * bit in the sstatus register and enable the timer, software and external interrupts in the
+ * sie register.
+ * We note that exceptions are always enabled, hence no modifications to exception registers
+ * are required.
+ */
+void trap_init() {
+    intr_init();
 
-    // Initialize PLIC (Platform Local Controller)
-    plic_init();
-
+    // Enable interrupts
+    w_sie(r_sie() | SIE_STIE | SIE_SSIE | SIE_SEIE);
+    intr_enable();
 }
 
-void intr_dump_frame(const trap_frame_t* tf) {
-
+/*
+ * Procedure:   trap_hart_init
+ * ---------------------------
+ * To enable trap handling, we first have to store the address of trap handler for the kernel (s_trap)
+ * in the stvec (supervisor trap vector) register using the direct trap mode.
+ */
+void trap_hart_init() {
+    w_stvec(STVEC((uintptr_t)s_trap_vec, STVEC_MODE_DIRECT));
 }
 
-void s_intr_handler(trap_frame_t* tf) {
-    intr_t intr = SCAUSE_EXCEPTION(tf->cause);
 
-    intr_handler_t* handler = iht[intr];
-    if (handler != null) {
-        handler(tf);
+/*
+ * Procedure:   s_trap
+ * -------------------
+ *
+ */
+void s_trap(trap_frame_t* tf) {
+
+    // Determine whether the trap is caused by an external interrupt.
+    bool is_interrupt = SCAUSE_INTERRUPT(tf->cause);
+
+    // We must assert that s_trap is only called if the previous privilege is Supervisor.
+    assert((tf->status & SSTATUS_SPP_MASK) != 0);
+
+    if (is_interrupt) {
+        s_intr_handler(tf);
     } else {
-        intr_dump_frame(tf);
-        panic("Unexpected interrupt.\n");
+        s_exc_handler(tf);
     }
+
 }
-
-
-
-
-
-

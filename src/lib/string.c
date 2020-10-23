@@ -94,7 +94,6 @@ int memcmp(const void* ptr1, const void* ptr2, size_t n) {
 
 size_t strlen(const char* str) {
     const char* p;
-
     assert(str != null);
     for (p = str; *p != '\0'; p++) continue;
     return (p - str);
@@ -104,5 +103,41 @@ size_t strnlen(const char* str, size_t n) {
     size_t m;
     for (m = 0; str[m] != '\0' && m < n; m++) continue;
     return m;
+}
+
+char* strcpy(char* dst, const char* src) {
+    assert(dst != null);
+    assert(src != null);
+
+    char* tmp = dst;
+    while ((*dst++ = *src++) != '\0');
+
+    return tmp;
+}
+
+char* strncpy(char* dst, const char* src, size_t n) {
+    assert(dst != null);
+    assert(src != null);
+
+    char* tmp = dst;
+    while (n) {
+        if ((*tmp = *src) != '\0') src++;
+        tmp++; n--;
+    }
+
+    return dst;
+}
+
+char* strcat(char* dst, const char* src) {
+    assert(dst != null);
+    assert(src != null);
+
+    char* tmp = dst;
+
+    size_t size = strlen(dst);
+    while (*src != '\0') dst[size++] = *src++;
+    dst[size] = '\0';
+
+    return tmp;
 }
 

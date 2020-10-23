@@ -53,18 +53,12 @@
 #   f28-31    ft8-11  floating point temp registers
 ########################################################################################################################
 
+#include <trap/trap.h>
 
 # To do much of the heavy lifting for context switches, we will be using ASM macros.
 # These macros are designed for saving an loading registers from a trap frame (see trap.h)
 
 .altmacro
-
-# To calculate byte offsets, we need to know the number of bytes per a register.
-# In QEMU's virt RISC-V 64, the registers consist of 8 bytes.
-.set REG_SIZE, 8
-
-.set NUM_GP_REGS, 32
-.set NUM_FP_REGS, 32
 
 # General purpose register macros:
 # The [save_gp] and [load_gp] macros load and save the ith general purpose register [xi]
@@ -118,9 +112,12 @@ m_trap_vec:
     add t3, t2, t3
     sd t3, 0(t1)
 
-    # Send supervisor software interrupt
-    li t1, 0b10
-    csrw sip, t1
+    # Send supervisor timer interrupt. This is done by setting the STIP (bit 5), software timer interrupt pending
+    # bit in the MIP register to 1.
+    li t1, 1
+    slli t1, t1, 5
+
+    csrw mip, t1
 
     ld t3, 32(t0)
     ld t2, 24(t0)
@@ -181,6 +178,8 @@ s_trap_vec:
     # Call s_trap :)
     call s_trap
 
+.global s_ret_trap
+s_ret_trap:
     # Once s_trap has finished executing, we'll return here.
     # We now simply perform the inverse operations to what we did above.
 

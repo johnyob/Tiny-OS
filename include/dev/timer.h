@@ -10,7 +10,15 @@
 #ifndef TINY_OS_TIMER_H
 #define TINY_OS_TIMER_H
 
+#include <lib/stdint.h>
+#include <trap/trap.h>
+
 void timer_init();
+void timer_vm_init();
+
+uint64_t timer_ticks();
+uint64_t timer_elapsed(uint64_t then);
+void timer_sleep(uint64_t ticks);
 
 void timer_handle_interrupt(UNUSED trap_frame_t* tf);
 

@@ -11,29 +11,35 @@
 #ifndef TINY_OS_INTERRUPT_H
 #define TINY_OS_INTERRUPT_H
 
-#include <lib/stdint.h>
+#include <trap/trap.h>
 
-#include <trap.h>
+void intr_init();
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// PLIC                                                                                                               //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#define PLIC_START          (0xc000000L)
-#define PLIC_SIZE           (0x4000000L)
-
-void plic_init();
-void plic_hart_init();
-
-void plic_handle_interrupt(trap_frame_t* tf);
+void s_intr_handler(trap_frame_t* tf);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// CLINT                                                                                                              //
+// INTERRUPT STATE                                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define CLINT_START         (0x2000000L)
-#define CLINT_SIZE          (0x10000L)
+/*
+ * In Tiny OS it is often the case that some operations cannot be interrupted by an interrupt (an asynchronous
+ * trap). So we must provide a mechanism that allows kernel code to disable interrupts, but we must
+ * consider the case where interrupts are disabled and we call the following code:
+ *      intr_disable();
+ *      ...
+ *      intr_enable();
+ * In this case, interrupts should not be enabled when intr_enable is called. To implement this behavior we use
+ * 'interrupt states'.
+ */
+typedef enum {
+    INTR_OFF,
+    INTR_ON
+} intr_state_t;
 
-void clint_hart_init();
+intr_state_t intr_get_state();
+void intr_set_state(intr_state_t state);
+
+intr_state_t intr_enable();
+intr_state_t intr_disable();
 
 #endif //TINY_OS_INTERRUPT_H

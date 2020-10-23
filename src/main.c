@@ -10,17 +10,26 @@
 #include <lib/stdint.h>
 #include <lib/stdbool.h>
 #include <lib/stdio.h>
+#include <lib/string.h>
 
+#include <param.h>
 #include <riscv.h>
 #include <debug.h>
 
-#include <uart.h>
-#include <pmm.h>
-#include <vmm.h>
-#include <trap.h>
-#include <interrupt.h>
+#include <dev/uart.h>
+#include <dev/timer.h>
+
+#include <mm/pmm.h>
+#include <mm/vmm.h>
+#include <mm/malloc.h>
+
+#include <trap/trap.h>
+
+#include <threads/thread.h>
 
 #include <main.h>
+
+uint8_t kernel_stack[NUM_HART * 4096] __attribute__((section(".stack")));
 
 
 /*
@@ -65,8 +74,8 @@ void init() {
     // To access the hartid from supervisor mode, we store it in the tp register
     w_hartid(r_mhartid());
 
-    // Initialize the CLINT
-    clint_hart_init();
+    // Initialize the timer (CLINT)
+    timer_init();
 
     asm("mret");
 }
@@ -80,10 +89,14 @@ void main() {
 
     // For testing, this always holds true
     if (r_hartid() == 0) {
+        thread_init();
+        thread_hart_init();
+
         // UART Initialization
         uart_init();
         printf("Hello World :)\n");
 
+        info("Threads initialized.\n");
         info("UART initialized.\n");
 
         info("PMM initializing...\n");
@@ -93,19 +106,31 @@ void main() {
 
         info("VMM initializing...\n");
         vmm_init();
+
+        // Initialize thread and uart virtual memory (vm) here (special since uart is used for logging)
+        uart_vm_init();
+        thread_vm_init();
+
         vmm_hart_init();
         info("VMM initialized.\n");
+
+        info("malloc initializing...\n");
+        malloc_init();
+        info("malloc initialized.\n");
+
 
         info("Traps initializing...\n");
         trap_init();
         trap_hart_init();
         info("Traps initialized.\n");
 
-        info("PLIC initializing...\n");
-        plic_init();
-        plic_hart_init();
-        info("PLIC initialized.\n");
+        scheduler_start();
 
+
+        for (;;) {
+            info("Kernel thread now sleeping...\n");
+            timer_sleep(10000000);
+        }
     }
 
     while (true);
